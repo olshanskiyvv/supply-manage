@@ -1,0 +1,27 @@
+services:
+  database:
+    container_name: database
+    image: postgres:alpine
+    env_file:
+      - ".env"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U test"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - default
+
+volumes:
+  postgres_data:
+    driver: local
+
+
+networks:
+  default:
+    driver: bridge

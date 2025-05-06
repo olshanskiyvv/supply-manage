@@ -1,7 +1,6 @@
 from enum import Enum
 
-from sqlalchemy import text
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped
 from app.database import Base, str_uniq, int_pk
 
 class Role(str, Enum):

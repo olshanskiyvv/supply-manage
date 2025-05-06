@@ -5,7 +5,7 @@ from app.auth.models import Role, User
 from app.auth.service import authenticate_user
 from app.utils.jwt import get_password_hash, create_access_token
 from app.auth.dao import UsersDAO
-from app.auth.schemas import SUserRegister, SUserLogin
+from app.auth.schemas import SUserRegister, SUserLogin, SUserResponse
 
 router = APIRouter(prefix='/auth', tags=['Auth'])
 
@@ -36,8 +36,8 @@ async def auth_user(response: Response, user_data: SUserLogin) -> dict:
     return {'access_token': access_token, 'refresh_token': None}
 
 @router.get("/me/")
-async def get_me(user_data: User = Depends(get_current_user)):
-    return user_data
+async def get_me(user_data: User = Depends(get_current_user)) -> SUserResponse:
+    return SUserResponse.model_validate(user_data, from_attributes=True)
 
 @router.post("/logout/")
 async def logout_user(response: Response):

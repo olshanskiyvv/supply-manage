@@ -52,5 +52,5 @@ async def logout_user(response: Response) -> SMessageResponse:
     )
 
 @router.get("/all_users/")
-async def get_all_users(_: User = Depends(get_current_admin_user)):
+async def get_all_users(_: User = Depends(get_current_admin_user)) -> list[SUserResponse]:
     return await UsersDAO.find_all()

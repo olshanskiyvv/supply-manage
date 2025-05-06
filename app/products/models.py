@@ -1,7 +1,7 @@
 from enum import Enum
 
 from sqlalchemy import Text
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database import Base, int_pk
 
 
@@ -16,6 +16,11 @@ class Product(Base):
     description: Mapped[str] = mapped_column(Text, nullable=False)
     available: Mapped[int]
     unit: Mapped[MeasureUnit]
+
+    suppliers: Mapped[list["SupplierProduct"]] = relationship(
+        "SupplierProduct",
+        back_populates="product",
+    )
 
     extend_existing = True
 

@@ -18,7 +18,7 @@ class SSupplierShort(BaseModel):
     price: int = Field(..., ge=0, description='Цена')
 
 class SFullProduct(SProduct):
-    suppliers: list[SSupplierShort] = Field(default_factory=list, description='Доступные поставщики')
+    suppliers: list[SSupplierShort] = Field(..., description='Доступные поставщики')
 
 class SProductRB(BaseModel):
     title: str = Field(..., description='Наименование')

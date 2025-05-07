@@ -11,4 +11,4 @@ class SPaginationParams(BaseModel):
 class SPageResponse[T](BaseModel):
     page: int = Field(1, ge=1, description="Номер страницы")
     size: int = Field(100, ge=10, description="Размер страницы")
-    payload: list[T] = Field(default_factory=list, description='Данные')
+    payload: list[T] = Field(..., description='Данные')

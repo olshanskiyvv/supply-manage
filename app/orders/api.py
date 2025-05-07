@@ -25,6 +25,7 @@ async def create_order(order: SOrderRB,
     order_dict = order.model_dump()
     order_dict['user_id'] = current_user.id
     order_dict['status'] = Status.FORMING
+    order_dict['total_cost'] = None
     order_dict['cancel_comment'] = None
 
     order = await OrdersDAO.add(**order_dict)

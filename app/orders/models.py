@@ -28,6 +28,7 @@ class Order(Base):
     cancel_comment: Mapped[str] = mapped_column(Text, nullable=True)
     user_id: Mapped[int] = mapped_column(ForeignKey('users.id'), nullable=False)
     supplier_id: Mapped[int] = mapped_column(ForeignKey('suppliers.id'), nullable=False)
+    total_cost: Mapped[int] = mapped_column(nullable=True)
 
     user: Mapped["User"] = relationship("User", back_populates="orders")
     supplier: Mapped["Supplier"] = relationship("Supplier", back_populates="orders")

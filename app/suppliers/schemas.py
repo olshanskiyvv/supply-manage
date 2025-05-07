@@ -16,14 +16,14 @@ class SSupplierFilters(BaseModel):
     title: str = Field('', description="Наименование")
 
 class SSupplierProductRB(BaseModel):
-    product_id: int = Field(..., description="Идентификатор продукта")
-    supplier_product_code: str = Field(..., description="Код продукта у поставщика")
+    product_id: int = Field(..., description="Идентификатор товары")
+    supplier_product_code: str = Field(..., description="Код товара у поставщика")
     current_price: int = Field(..., description="Текущая цена")
 
 class SProductShort(BaseModel):
-    product_id: int = Field(..., description="Идентификатор продукта")
-    title: str = Field(..., description="Наименование продукта")
-    product_code: str = Field(..., description="Код продукта у поставщика")
+    product_id: int = Field(..., description="Идентификатор товара")
+    title: str = Field(..., description="Наименование товара")
+    product_code: str = Field(..., description="Код товара у поставщика")
     price: int = Field(..., description="Цена")
 
 class SFullSupplier(SSupplier):

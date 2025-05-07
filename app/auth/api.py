@@ -6,7 +6,7 @@ from app.auth.service import authenticate_user
 from app.schemas import SMessageResponse
 from app.utils.jwt import get_password_hash, create_access_token
 from app.auth.dao import UsersDAO
-from app.auth.schemas import SUserRegister, SUserLogin, SUserResponse, SLoginResponse
+from app.auth.schemas import SUserRegister, SUserLogin, SUser, SLoginResponse
 
 router = APIRouter(prefix='/auth', tags=['Auth'])
 
@@ -41,8 +41,8 @@ async def auth_user(response: Response,
     )
 
 @router.get("/me/")
-async def get_me(user_data: User = Depends(get_current_user)) -> SUserResponse:
-    return SUserResponse.model_validate(user_data, from_attributes=True)
+async def get_me(user_data: User = Depends(get_current_user)) -> SUser:
+    return SUser.model_validate(user_data, from_attributes=True)
 
 @router.post("/logout/")
 async def logout_user(response: Response) -> SMessageResponse:
@@ -52,5 +52,5 @@ async def logout_user(response: Response) -> SMessageResponse:
     )
 
 @router.get("/all_users/")
-async def get_all_users(_: User = Depends(get_current_admin_user)) -> list[SUserResponse]:
+async def get_all_users(_: User = Depends(get_current_admin_user)) -> list[SUser]:
     return await UsersDAO.find_all()

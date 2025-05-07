@@ -44,6 +44,22 @@ class BaseDAO[T]:
                 return new_instance
 
     @classmethod
+    async def add_all(cls, *value_dicts) -> T:
+        async with async_session_maker() as session:
+            async with session.begin():
+                new_instances = [
+                    cls.model(**value_dict)
+                    for value_dict in value_dicts
+                ]
+                session.add_all(new_instances)
+                try:
+                    await session.commit()
+                except SQLAlchemyError as e:
+                    await session.rollback()
+                    raise e
+                return new_instances
+
+    @classmethod
     async def update(cls, filter_by, **values) -> int:
         async with async_session_maker() as session:
             async with session.begin():

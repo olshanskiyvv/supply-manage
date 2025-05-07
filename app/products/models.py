@@ -21,6 +21,10 @@ class Product(Base):
         "SupplierProduct",
         back_populates="product",
     )
+    orders: Mapped[list["OrderProduct"]] = relationship(
+        "OrderProduct",
+        back_populates="product",
+    )
 
     extend_existing = True
 

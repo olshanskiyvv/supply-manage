@@ -1,9 +1,9 @@
 from datetime import datetime
-from typing import Annotated
+from typing import Annotated, Any
 
 from sqlalchemy import func
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncAttrs
-from sqlalchemy.orm import DeclarativeBase, declared_attr, mapped_column, Mapped
+from sqlalchemy.orm import DeclarativeBase, declared_attr, mapped_column, Mapped, class_mapper
 from app.config import get_db_url
 
 
@@ -28,3 +28,8 @@ class Base(AsyncAttrs, DeclarativeBase):
 
     created_at = Mapped[created_at]
     updated_at = Mapped[updated_at]
+
+    def to_dict(self) -> dict[str, Any]:
+        columns = class_mapper(self.__class__).columns
+        return {column.key: getattr(self, column.key) for column in columns}
+

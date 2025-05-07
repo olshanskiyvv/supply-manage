@@ -6,7 +6,6 @@ from sqlalchemy.orm import joinedload
 
 from app.dao.base import BaseDAO
 from app.database import async_session_maker
-from app.products.schemas import SProduct
 from app.suppliers.models import Supplier, SupplierProduct
 from app.suppliers.schemas import SSupplierFilters
 

@@ -11,7 +11,7 @@ class SOrder(BaseModel):
     id: int = Field(..., description='Идентификатор')
     number: UUID = Field(..., description='Номер заказа')
     status: Status = Field(..., description='Статус заказа')
-    cancel_comment: str = Field('', description='Комментарий к отмене')
+    cancel_comment: str | None = Field('', description='Комментарий к отмене')
     supplier: SSupplier = Field(..., description='Поставщик')
 
 class SOrderAdmin(SOrder):
@@ -19,6 +19,9 @@ class SOrderAdmin(SOrder):
 
 class SOrderRB(BaseModel):
     supplier_id: int = Field(..., description='Идентификатор поставщика')
+
+class SOrderFilter(BaseModel):
+    supplier: str = Field('', description='Поставщик')
 
 class SOrderProductRB(BaseModel):
     product_id: int = Field(..., description='Идентификатор товара')

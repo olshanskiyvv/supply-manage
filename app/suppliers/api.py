@@ -1,5 +1,3 @@
-from itertools import product
-
 from fastapi import APIRouter, Depends, HTTPException
 from slugify import slugify
 

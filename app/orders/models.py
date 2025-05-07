@@ -31,7 +31,7 @@ class Order(Base):
 
     user: Mapped["User"] = relationship("User", back_populates="orders")
     supplier: Mapped["Supplier"] = relationship("Supplier", back_populates="orders")
-    products: Mapped["OrderProduct"] = relationship("OrderProduct", back_populates="order")
+    products: Mapped[list["OrderProduct"]] = relationship("OrderProduct", back_populates="order")
 
     extend_existing = True
 

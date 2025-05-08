@@ -1,19 +1,24 @@
 from fastapi import APIRouter, Depends, HTTPException
-from slugify import slugify
 
 from app.auth.dependencies import get_current_user, get_current_admin_user
 from app.auth.models import User, Role
-from app.suppliers.dao import SuppliersDAO, SupplierProductDAO
-from app.suppliers.models import Supplier
+from app.suppliers.dao import SuppliersDAO
 from app.suppliers.schemas import (
     SSupplier,
     SSupplierRB,
     SSupplierFilters,
     SSupplierAdmin,
     SFullSupplier,
-    SProductShort, SSupplierProductRB
+    SSupplierProductRB
 )
 from app.schemas import SMessageResponse
+from app.suppliers.service import (
+    supplier_to_full_schema,
+    add_products_to_supplier,
+    delete_products_from_supplier,
+    update_supplier_data,
+    create_new_supplier
+)
 
 router = APIRouter(prefix='/suppliers', tags=['Suppliers'])
 
@@ -36,10 +41,7 @@ async def all_suppliers(filters: SSupplierFilters = Depends(),
 @router.post('/')
 async def create_supplier(supplier: SSupplierRB,
                           current_admin: User = Depends(get_current_admin_user)) -> SSupplierAdmin:
-    supplier_dict = supplier.model_dump()
-    supplier_dict['admin_id'] = current_admin.id
-    supplier_dict['topic_name_base'] = slugify(supplier.title)
-    new_supplier = await SuppliersDAO.add(**supplier_dict)
+    new_supplier = await create_new_supplier(current_admin.id, supplier)
     return new_supplier
 
 
@@ -47,18 +49,14 @@ async def create_supplier(supplier: SSupplierRB,
 async def update_supplier(supplier_id: int,
                           supplier: SSupplierRB,
                           current_admin: User = Depends(get_current_admin_user)) -> SSupplierAdmin:
-    supplier_dict = supplier.model_dump()
-    supplier_dict['admin_id'] = current_admin.id
-    count = await SuppliersDAO.update(
-        filter_by={'id': supplier_id},
-        **supplier_dict
-    )
-    if count == 0:
+    old_supplier = SuppliersDAO.find_one_or_none_by_id(supplier_id)
+    if old_supplier is None:
         raise HTTPException(
             status_code=404,
-            detail=f"Supplier with {supplier_id=} not found",
+            detail=f"Supplier with {supplier_id=} not found"
         )
-    new_supplier = await SuppliersDAO.find_one_or_none_by_id(supplier_id)
+
+    new_supplier = await update_supplier_data(current_admin.id, supplier_id, supplier)
     return new_supplier
 
 
@@ -76,23 +74,6 @@ async def delete_supplier(supplier_id: int,
     )
 
 
-def _supplier_to_full_schema(supplier: Supplier) -> SFullSupplier:
-    return SFullSupplier(
-        id=supplier.id,
-        title=supplier.title,
-        ogrn=supplier.ogrn,
-        products=[
-            SProductShort(
-                product_id=prod.product_id,
-                title=prod.product.title,
-                product_code=prod.supplier_product_id,
-                price=prod.price,
-            )
-            for prod in supplier.products
-        ]
-    )
-
-
 @router.get('/{supplier_id}/')
 async def get_supplier_by_id(supplier_id: int,
                              _: User = Depends(get_current_user)) -> SFullSupplier:
@@ -102,7 +83,7 @@ async def get_supplier_by_id(supplier_id: int,
             status_code=404,
             detail=f"Supplier with {supplier_id=} not found",
         )
-    return _supplier_to_full_schema(supplier)
+    return supplier_to_full_schema(supplier)
 
 
 @router.post('/{supplier_id}/products/')
@@ -115,18 +96,8 @@ async def add_supplied_products(supplier_id: int,
             status_code=404,
             detail=f"Supplier with {supplier_id=} not found",
         )
-    new_products = [
-        {
-            'product_id': product.product_id,
-            'supplier_id': supplier_id,
-            'supplier_product_id': product.supplier_product_code,
-            'price': product.current_price,
-        }
-        for product in products
-    ]
-    await SupplierProductDAO.add_all(*new_products)
-    supplier = await SuppliersDAO.find_full_by_id(supplier_id)
-    return _supplier_to_full_schema(supplier)
+    updated_supplier = await add_products_to_supplier(supplier, products)
+    return updated_supplier
 
 
 @router.delete('/{supplier_id}/products/')
@@ -144,6 +115,6 @@ async def delete_supplied_products(supplier_id: int,
             status_code=400,
             detail=f"List of products to delete is empty",
         )
-    await SupplierProductDAO.delete_by_supplier_id_and_product_ids(supplier_id, products)
-    supplier = await SuppliersDAO.find_full_by_id(supplier_id)
-    return _supplier_to_full_schema(supplier)
+
+    updated_supplier = await delete_products_from_supplier(supplier_id, products)
+    return updated_supplier

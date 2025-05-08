@@ -2,9 +2,8 @@ from fastapi import APIRouter, HTTPException, status, Response, Depends
 
 from app.auth.dependencies import get_current_user, get_current_admin_user
 from app.auth.models import User
-from app.auth.service import authenticate_user
+from app.auth.service import authenticate_user, get_password_hash, create_access_token
 from app.schemas import SMessageResponse
-from app.utils.jwt import get_password_hash, create_access_token
 from app.auth.dao import UsersDAO
 from app.auth.schemas import SUserRegister, SUserLogin, SUser, SLoginResponse
 

@@ -37,6 +37,13 @@ class ProductDAO(BaseDAO[Product]):
             result = await session.execute(query)
             return result.scalars().unique().all()
 
+    @classmethod
+    async def update_available_stock(cls, product_id: int, available: int) -> int:
+        count = await cls.update({'id': product_id}, available=available)
+        return count
+
+
+
 
 
 

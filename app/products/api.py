@@ -4,6 +4,7 @@ from app.auth.dependencies import get_current_user, get_current_admin_user
 from app.auth.models import User
 from app.products.dao import ProductDAO
 from app.products.schemas import SProduct, SProductRB, SProductFilters, SFullProduct, SSupplierShort
+from app.products.service import product_to_full_schema
 from app.schemas import SMessageResponse
 
 router = APIRouter(prefix='/products', tags=['Products'])
@@ -15,25 +16,15 @@ async def all_products(with_suppliers: bool = False,
     if with_suppliers:
         products = await ProductDAO.find_all_full_by_filters(filters)
         return [
-            SFullProduct(
-                id=prod.id,
-                title=prod.title,
-                description=prod.description,
-                available=prod.available,
-                unit=prod.unit,
-                suppliers=[
-                    SSupplierShort(
-                        title=sup.supplier.title,
-                        price=sup.price,
-                    )
-                    for sup in prod.suppliers
-                ]
-            )
+            product_to_full_schema(prod)
             for prod in products
         ]
 
     products = await ProductDAO.find_all_by_filters(filters)
-    return products
+    return [
+        SProduct.model_validate(prod, from_attributes=True)
+        for prod in products
+    ]
 
 @router.post("/")
 async def create_product(product: SProductRB,

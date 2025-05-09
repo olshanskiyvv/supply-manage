@@ -3,7 +3,7 @@ services:
     container_name: database
     image: postgres:alpine
     env_file:
-      - ".env"
+      - "docker.env"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
@@ -16,7 +16,6 @@ services:
       retries: 5
     networks:
       - default
-
 
   zookeeper:
     image: confluentinc/cp-zookeeper:7.4.4
@@ -40,10 +39,27 @@ services:
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
 
+
+  fastapi-backend:
+    container_name: fastapi-backend
+    build:
+      context: .
+    depends_on:
+      - database
+      - kafka
+    env_file:
+      - "docker.env"
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+    volumes:
+      - ./app/:/app/app/
+    networks:
+      - default
+
 volumes:
   postgres_data:
     driver: local
 
 networks:
   default:
-    driver: bridge

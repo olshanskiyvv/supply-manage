@@ -21,7 +21,7 @@ def product_to_full_schema(product: Product) -> SFullProduct:
     )
 
 async def update_available_stock(new_available: KafkaNewProductAvailable) -> None:
-    count = ProductDAO.update_available_stock(
+    count = await ProductDAO.update_available_stock(
         new_available.product_id,
         new_available.available,
     )

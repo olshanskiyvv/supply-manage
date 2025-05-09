@@ -2,11 +2,25 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from app.auth.dependencies import get_current_user, get_current_admin_user
 from app.auth.models import User, Role
-from app.orders.dao import OrdersDAO, OrderProductDAO
+from app.orders.dao import OrdersDAO
 from app.orders.models import Status, Order
-from app.orders.schemas import SOrder, SOrderRB, SFullOrder, SOrderProductRB
-from app.orders.services import order_to_full_schema, create_new_order, add_products_to_order, \
-    delete_products_from_order
+from app.orders.schemas import (
+    SOrder,
+    SOrderRB,
+    SFullOrder,
+    SOrderProductRB,
+    SCancelCommentRB
+)
+from app.orders.services import (
+    order_to_full_schema,
+    create_new_order,
+    add_products_to_order,
+    delete_products_from_order,
+    set_next_status,
+    InvalidStatusError,
+    send_new_order_event, find_not_supplied_order_products
+)
+from app.products.schemas import SProduct
 
 router = APIRouter(prefix='/orders', tags=['Orders'])
 
@@ -87,3 +101,93 @@ async def delete_ordered_products(order_id: int,
     order = await delete_products_from_order(order_id, products)
     return order
 
+
+@router.put('/{order_id}/status/set_created/')
+async def set_order_status_created(order_id: int,
+                                   current_user: User = Depends(get_current_user)) -> SOrder:
+    order = await OrdersDAO.find_one_or_none_by_id(order_id)
+    if order is None or not _check_access_to_order(order, current_user):
+        raise HTTPException(
+            status_code=404,
+            detail=f'Order with {order_id=} not found.',
+        )
+    unsupported_products = await find_not_supplied_order_products(order)
+    if unsupported_products:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                'message': 'Some products are not supplied by this supplier',
+                'products': [
+                    SProduct.model_validate(prod, from_attributes=True).model_dump()
+                    for prod in unsupported_products
+                ],
+            }
+        )
+    try:
+        order = await set_next_status(order, Status.CREATED)
+    except InvalidStatusError as e:
+        raise HTTPException(
+            status_code=400,
+            detail=str(e),
+        )
+    return SOrder.model_validate(order, from_attributes=True)
+
+
+@router.put('/{order_id}/status/set_cancelled/')
+async def set_order_status_cancelled(order_id: int,
+                                     comment: SCancelCommentRB,
+                                     current_user: User = Depends(get_current_user)) -> SOrder:
+    order = await OrdersDAO.find_one_or_none_by_id(order_id)
+    if order is None or not _check_access_to_order(order, current_user):
+        raise HTTPException(
+            status_code=404,
+            detail=f'Order with {order_id=} not found.',
+        )
+    try:
+        order = await set_next_status(order, Status.CANCELLED_BY_FACTORY, comment.comment)
+    except InvalidStatusError as e:
+        raise HTTPException(
+            status_code=400,
+            detail=str(e),
+        )
+    return SOrder.model_validate(order, from_attributes=True)
+
+
+@router.put('/{order_id}/status/set_sent_to_supplier/')
+async def set_order_status_sent_to_supplier(order_id: int,
+                                            current_user: User = Depends(get_current_user)) -> SOrder:
+    order = await OrdersDAO.find_one_or_none_by_id(order_id)
+    if order is None or not _check_access_to_order(order, current_user):
+        raise HTTPException(
+            status_code=404,
+            detail=f'Order with {order_id=} not found.',
+        )
+    try:
+        await set_next_status(order, Status.SEND_TO_SUPPLIER)
+    except InvalidStatusError as e:
+        raise HTTPException(
+            status_code=400,
+            detail=str(e),
+        )
+    order = await OrdersDAO.find_full_by_id(order_id)
+    await send_new_order_event(order)
+    return SOrder.model_validate(order, from_attributes=True)
+
+
+@router.put('/{order_id}/status/set_completed/')
+async def set_order_status_completed(order_id: int,
+                                     current_user: User = Depends(get_current_user)) -> SOrder:
+    order = await OrdersDAO.find_one_or_none_by_id(order_id)
+    if order is None or not _check_access_to_order(order, current_user):
+        raise HTTPException(
+            status_code=404,
+            detail=f'Order with {order_id=} not found.',
+        )
+    try:
+        order = await set_next_status(order, Status.COMPLETED)
+    except InvalidStatusError as e:
+        raise HTTPException(
+            status_code=400,
+            detail=str(e),
+        )
+    return SOrder.model_validate(order, from_attributes=True)

@@ -1,6 +1,10 @@
 from typing import Sequence
 
-from sqlalchemy import select, delete as sqlalchemy_delete
+from sqlalchemy import (
+    select,
+    delete as sqlalchemy_delete,
+    update as sqlalchemy_update,
+)
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import joinedload
 
@@ -42,10 +46,11 @@ class SupplierProductDAO(BaseDAO[SupplierProduct]):
     model = SupplierProduct
 
     @classmethod
-    async def delete_by_supplier_id_and_product_ids(cls,
-                                                    supplier_id: int,
-                                                    product_ids: list[int]
-                                                    ) -> int:
+    async def delete_by_supplier_id_and_product_ids(
+            cls,
+            supplier_id: int,
+            product_ids: list[int]
+    ) -> int:
         async with async_session_maker() as session:
             async with session.begin():
                 query = (
@@ -60,3 +65,28 @@ class SupplierProductDAO(BaseDAO[SupplierProduct]):
                     await session.rollback()
                     raise e
                 return result.rowcount
+
+    @classmethod
+    async def update_price_by_supplier_id_and_product_code(
+            cls,
+            supplier_id: str,
+            product_code: str,
+            price: int
+    ) -> int:
+        async with async_session_maker() as session:
+            query = (
+                sqlalchemy_update(cls.model)
+                .where(
+                    cls.model.supplier_id == supplier_id,
+                    cls.model.supplier_product_id == product_code,
+                )
+                .values(price=price)
+                .execution_options(synchronize_session="fetch")
+            )
+            result = await session.execute(query)
+            try:
+                await session.commit()
+            except SQLAlchemyError as e:
+                await session.rollback()
+                raise e
+            return result.rowcount

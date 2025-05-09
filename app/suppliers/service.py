@@ -1,5 +1,6 @@
 from slugify import slugify
 
+from app.kafka.schemas import KafkaNewSupplierPrice
 from app.suppliers.dao import SupplierProductDAO, SuppliersDAO
 from app.suppliers.models import Supplier
 from app.suppliers.schemas import SFullSupplier, SProductShort, SSupplierProductRB, SSupplierAdmin, SSupplierRB
@@ -62,4 +63,18 @@ async def delete_products_from_supplier(supplier_id: int,
     await SupplierProductDAO.delete_by_supplier_id_and_product_ids(supplier_id, products)
     supplier = await SuppliersDAO.find_full_by_id(supplier_id)
     return supplier_to_full_schema(supplier)
+
+
+async def update_supplier_product_price(new_price: KafkaNewSupplierPrice) -> None:
+    supplier = await SuppliersDAO.find_one_or_none(ogrn=new_price.ogrn)
+    if supplier is None:
+        raise ValueError(f'Supplier with ogrn={new_price.ogrn} not found')
+    count = await SupplierProductDAO.update_price_by_supplier_id_and_product_code(
+        supplier.id,
+        new_price.product_code,
+        new_price.price,
+    )
+    if count == 0:
+        raise ValueError('Something went wrong while updating product price', new_price.model_dump())
+
 

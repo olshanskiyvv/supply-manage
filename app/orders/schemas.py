@@ -35,3 +35,6 @@ class SProductShort(BaseModel):
 class SFullOrder(SOrder):
     products: list[SProductShort] = Field(..., description='Товары')
 
+class SCancelCommentRB(BaseModel):
+    comment: str = Field(..., description='Комментарий к отмене')
+

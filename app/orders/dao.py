@@ -1,12 +1,10 @@
 from sqlalchemy import select, delete as sqlalchemy_delete
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import joinedload
-from sqlalchemy.sql.functions import coalesce
+from sqlalchemy.orm import joinedload, contains_eager
 
 from app.dao.base import BaseDAO
 from app.database import async_session_maker
-from app.orders.models import Order, OrderProduct
-from app.orders.schemas import SOrderFilter
+from app.orders.models import Order, OrderProduct, Status
 
 
 class OrdersDAO(BaseDAO[Order]):
@@ -40,6 +38,16 @@ class OrdersDAO(BaseDAO[Order]):
             )
             result = await session.execute(query)
             return result.scalars().unique().one_or_none()
+
+
+
+
+    @classmethod
+    async def set_status(cls, order_id: int, status: Status, comment: str | None = None) -> Order:
+        count = await cls.update({'id': order_id}, status=status, cancel_comment=comment)
+        if count == 0:
+            raise ValueError(f'Something went wrong while setting status {status} for order with id={order_id}')
+        return await cls.find_full_by_id(order_id)
 
 
 class OrderProductDAO(BaseDAO[OrderProduct]):

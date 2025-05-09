@@ -18,10 +18,9 @@ RUN poetry install --no-root
 
 COPY ./app ./app
 COPY alembic.ini ./
-#COPY .env ./
+#COPY docker.env ./.env
 
-RUN poetry run alembic upgrade head
+CMD poetry run alembic upgrade head; poetry run uvicorn app.main:app --host 0.0.0.0 --reload
 
-CMD ["poetry", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--reload"]
 
 EXPOSE 8000

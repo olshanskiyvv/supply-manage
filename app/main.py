@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.auth.api import router as auth_router
 from app.kafka.topics import KafkaTopicManager, KAFKA_TOPICS
@@ -30,8 +31,15 @@ async def lifespan(_: FastAPI) -> AsyncGenerator[None, None]:
     finally:
         await kafka_consumer.stop()
         await kafka_producer.stop()
-
 app = FastAPI(lifespan=lifespan)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=['*'],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 app.include_router(auth_router)
 app.include_router(products_router)

@@ -1,7 +1,7 @@
 services:
   database:
     container_name: database
-    image: postgres:alpine
+    image: postgres:17.4-alpine
     env_file:
       - "docker.env"
     volumes:

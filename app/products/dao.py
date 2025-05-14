@@ -31,7 +31,7 @@ class ProductDAO(BaseDAO[Product]):
                 select(cls.model)
                 .options(
                     joinedload(cls.model.suppliers)
-                    .options(joinedload(SupplierProduct.product))
+                    .options(joinedload(SupplierProduct.supplier))
                 )
                 .where(cls.model.title.icontains(filters.title))
             )

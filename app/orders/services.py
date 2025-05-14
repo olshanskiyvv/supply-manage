@@ -31,6 +31,7 @@ async def create_new_order(user_id: int,
     order_dict['cancel_comment'] = None
 
     order = await OrdersDAO.add(**order_dict)
+    order = await OrdersDAO.find_full_by_id(order.id)
     return SOrder.model_validate(order, from_attributes=True)
 
 

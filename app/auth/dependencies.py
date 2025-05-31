@@ -11,6 +11,8 @@ from app.config import settings
 def get_token(request: Request):
     token = request.cookies.get('users_access_token')
     if not token:
+        token = request.headers.get('Authorization')[7:]
+    if not token:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Token not found')
     return token
 
